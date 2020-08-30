@@ -8,6 +8,9 @@ from typing import Iterable
 from typing import Optional
 from urllib.request import Request
 from urllib.request import urlopen
+from urllib.request import HTTPCookieProcessor
+from urllib.request import build_opener
+import browser_cookie3
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +24,18 @@ def _execute_request(
     if headers:
         base_headers.update(headers)
     if url.lower().startswith("http"):
-        request = Request(url, headers=base_headers, method=method)
+        request = Request(url, method=method)
+        request.headers.update(base_headers)
+        
+        try:
+           cookies_jar = browser_cookie3.chrome(domain_name='.youtube.com')
+        except:
+            cookies_jar = browser_cookie3.firefox(domain_name='.youtube.com')
+
+        if cookies_jar is not None:
+            return build_opener(
+                HTTPCookieProcessor(cookies_jar)
+            ).open(request)
     else:
         raise ValueError("Invalid URL")
     return urlopen(request)  # nosec
